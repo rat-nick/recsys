@@ -48,7 +48,9 @@ class Dataset:
                 encoding="latin-1",
                 low_memory=True,
             )
-            self.ratings_df = self.ratings_df.join(items_df, on="item", how="left")
+            self.ratings_df = self.ratings_df.join(
+                items_df, on="item", how="left", rsuffix="item"
+            )
 
         if users_path is not None:
             users_df = pd.read_csv(
@@ -58,15 +60,15 @@ class Dataset:
                 encoding="latin-1",
                 low_memory=True,
             )
-            self.ratings_df = self.ratings_df.join(users_df, on="user", how="left")
-
-        # join the dataframes on their respective ids
+            self.ratings_df = self.ratings_df.join(
+                users_df, on="user", how="left", rsuffix="user"
+            )
         # 2: perform filtering using filter strategies
         for fs in filter_strategies:
-            df = fs(df)
+            self.ratings_df = fs(self.ratings_df)
 
         # 2.1: get only user, item and rating columns
-        df = df.iloc[:, :3]
+        df = df.iloc[:, ["user", "item", "rating"]]
 
         # 3: build surprise dataset
         self.dataset = surprise.Dataset.load_from_df(
