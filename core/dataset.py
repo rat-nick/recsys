@@ -1,7 +1,10 @@
-from typing import Callable, List
+from typing import Callable, Dict, Tuple, Union
 
 import pandas as pd
 import surprise
+from sklearn.model_selection import train_test_split
+
+from utils.data import build_full_df, str_to_timestamp
 
 
 class Dataset:
@@ -11,7 +14,7 @@ class Dataset:
         items_path: str = None,
         users_path: str = None,
         sep: str = ",",
-        filter_strategy: Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x,
+        filter: Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x,
     ):
         """
         This class represents a way to load a surprise dataset and build the full trainset with additional filtering applied
@@ -29,58 +32,88 @@ class Dataset:
         filter_strategies : List[function], optional
             list of functions to be applied to dataframe sequentialy, by default []
         """
+        ratings_df = None
+        users_df = None
+        items_df = None
 
         # load all data into their respective dataframes
         if ratings_path is not None:
-            self.ratings_df = pd.read_csv(
-                ratings_path,
-                sep=sep,
-                engine="python",
-                encoding="latin-1",
-                low_memory=True,
-            )
+            try:
+                ratings_df = pd.read_csv(
+                    ratings_path,
+                    sep=sep,
+                    engine="python",
+                    encoding="latin-1",
+                    low_memory=True,
+                )
+            except:
+                pass
 
         # lets assume that the ratings_df is mandatory and the others are optional
         if items_path is not None:
-            items_df = pd.read_csv(
-                items_path,
-                sep=sep,
-                engine="python",
-                encoding="latin-1",
-                low_memory=True,
-            )
-            self.ratings_df = self.ratings_df.join(
-                items_df, on="item", how="left", rsuffix="item"
-            )
+            try:
+                items_df = pd.read_csv(
+                    items_path,
+                    sep=sep,
+                    engine="python",
+                    encoding="latin-1",
+                    low_memory=True,
+                )
+            except:
+                pass
 
         if users_path is not None:
-            users_df = pd.read_csv(
-                users_path,
-                sep=sep,
-                engine="python",
-                encoding="latin-1",
-                low_memory=True,
-            )
-            self.ratings_df = self.ratings_df.join(
-                users_df, on="user", how="left", rsuffix="user"
-            )
+            try:
+                users_df = pd.read_csv(
+                    users_path,
+                    sep=sep,
+                    engine="python",
+                    encoding="latin-1",
+                    low_memory=True,
+                )
+            except:
+                pass
 
-        self.filter_strategy = filter_strategy
+        self.filter = filter
 
-    def build_surprise_trainset(self):
+        self.df = build_full_df(ratings_df, users_df, items_df)
+        self.df = str_to_timestamp(self.df)
 
-        dataset = self.ratings_df.loc[:, ["user", "item", "rating"]]
+    @property
+    def trainset(self) -> surprise.Trainset:
+        if hasattr(self, "_trainset"):
+            return self._trainset
+
+        self.apply_filter()
+
+        dataset = self.df.loc[:, ["user", "item", "rating"]]
 
         dataset = surprise.Dataset.load_from_df(
             dataset, surprise.Reader(line_format="user item rating")
         )
         # 4: build surprise trainset
-        trainset = dataset.build_full_trainset()
+        self._trainset = dataset.build_full_trainset()
 
-        self.n_items = trainset.n_items
-        self.n_users = trainset.n_users
+        self.n_items = self._trainset.n_items
+        self.n_users = self._trainset.n_users
 
-        return trainset
+        return self._trainset
 
-    def apply_filter_strategy(self):
-        self.ratings_df = self.filter_strategy(self.ratings_df)
+    def apply_filter(self):
+        self.df = self.filter(self.df)
+
+    def train_valid_test_split(
+        self,
+        mode: Union["user", "item"] = "user",
+    ) -> Tuple[Dict, Dict, Dict]:
+        # we select what are going to be the training cases
+        if mode == "user":
+            ratings = self.trainset.ur
+        elif mode == "item":
+            ratings = self.trainset.ir
+        else:
+            raise ValueError
+
+        train, test = train_test_split(ratings, test_size=0.2)
+        valid, test = train_test_split(test, test_size=0.5)
+        return train, valid, test

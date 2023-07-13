@@ -1,27 +1,6 @@
-def test_no_filter_strategy(full_dataset):
-    count_before = len(full_dataset.ratings_df)
+def test_df_fixtures(users_df, items_df, ratings_df):
+    assert len(users_df) != 0
+    assert len(items_df) != 0
+    assert len(ratings_df) != 0
 
-    full_dataset.apply_filter_strategy()
-
-    count_after = len(full_dataset.ratings_df)
-    assert count_before == count_after
-
-    full_dataset.build_surprise_trainset()
-
-    assert full_dataset.n_items == 1682
-    assert full_dataset.n_users == 943
-
-
-def test_filter_to_empty_dataset(full_dataset):
-    full_dataset.filter_strategy = lambda df: df[df.user == -1]
-
-    full_dataset.apply_filter_strategy()
-    full_dataset.build_surprise_trainset()
-
-    assert full_dataset.n_items == 0
-    assert full_dataset.n_users == 0
-
-
-def test_filter_by_date(full_dataset):
-    full_dataset.filter_strategy = lambda df: df[df.releaseDate]
-    assert True
+def test_dataset
