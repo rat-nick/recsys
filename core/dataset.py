@@ -1,5 +1,4 @@
-import logging
-from typing import List
+from typing import Callable, List
 
 import pandas as pd
 import surprise
@@ -12,9 +11,10 @@ class Dataset:
         items_path: str = None,
         users_path: str = None,
         sep: str = ",",
-        filter_strategies: List[function] = [],
+        filter_strategy: Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x,
     ):
-        """This claass represents a way to load a surprise dataset and build the full trainset with additional filtering applied
+        """
+        This class represents a way to load a surprise dataset and build the full trainset with additional filtering applied
 
         Parameters
         ----------
@@ -29,6 +29,7 @@ class Dataset:
         filter_strategies : List[function], optional
             list of functions to be applied to dataframe sequentialy, by default []
         """
+
         # load all data into their respective dataframes
         if ratings_path is not None:
             self.ratings_df = pd.read_csv(
@@ -63,19 +64,23 @@ class Dataset:
             self.ratings_df = self.ratings_df.join(
                 users_df, on="user", how="left", rsuffix="user"
             )
-        # 2: perform filtering using filter strategies
-        for fs in filter_strategies:
-            self.ratings_df = fs(self.ratings_df)
 
-        # 2.1: get only user, item and rating columns
-        df = df.iloc[:, ["user", "item", "rating"]]
+        self.filter_strategy = filter_strategy
 
-        # 3: build surprise dataset
-        self.dataset = surprise.Dataset.load_from_df(
-            df, surprise.Reader(line_format="user item rating")
+    def build_surprise_trainset(self):
+
+        dataset = self.ratings_df.loc[:, ["user", "item", "rating"]]
+
+        dataset = surprise.Dataset.load_from_df(
+            dataset, surprise.Reader(line_format="user item rating")
         )
         # 4: build surprise trainset
-        self.trainset = self.dataset.build_full_trainset()
+        trainset = dataset.build_full_trainset()
 
-    def build_dataset(self) -> surprise.Dataset:
-        return surprise.Dataset.load_from_df()
+        self.n_items = trainset.n_items
+        self.n_users = trainset.n_users
+
+        return trainset
+
+    def apply_filter_strategy(self):
+        self.ratings_df = self.filter_strategy(self.ratings_df)
