@@ -5,9 +5,9 @@ import torch.nn.functional as F
 import torchmetrics.functional as tmf
 from pytorch_lightning.callbacks import EarlyStopping
 from torch.utils.data import DataLoader
-from utils.tensors import split
 
-from vae.dataset import UserRatingsDataset
+from utils.tensor import split
+from vae.dataset import Dataset
 
 DEFAULT_PATH = "vae/vae.pt"
 

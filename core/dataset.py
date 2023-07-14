@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Literal, Tuple
 
 import pandas as pd
 import surprise
@@ -10,7 +10,7 @@ from utils.data import build_full_df
 
 class Dataset:
     def __init__(
-        self, trainset: surprise.Trainset, mode: Union["user", "item"] = "user"
+        self, trainset: surprise.Trainset, mode: Literal["user", "item"] = "user"
     ):
         self.trainset = trainset
         self.mode = mode
@@ -37,13 +37,31 @@ class Dataset:
     def n_ratings(self) -> int:
         return self.trainset.n_ratings
 
-    def tvt(self, mode: Union["item", "user"] = "item") -> Tuple[Dict, Dict, Dict]:
-        if mode == "user":
+    def tvt(self, mode: Literal["item", "user"] = "user") -> Tuple[Dict, Dict, Dict]:
+        """
+        Method for getting train, validation and test dicts containing ratings
+
+        Parameters
+        ----------
+        mode : Literal[&quot;item&quot;, &quot;user&quot;]
+            Whether to do splitting based on users or on items, by default "item"
+
+        Returns
+        -------
+        Tuple[Dict, Dict, Dict]
+            train, validation and test dicts respectively
+
+        Raises
+        ------
+        ValueError
+            Only when the supplied `mode` parameter is invalid
+        """
+        if self.mode == "user":
             ratings = self.user_ratings()
-            n_features = self.n_items
-        elif mode == "item":
+
+        elif self.mode == "item":
             ratings = self.item_ratings()
-            n_features = self.n_users
+
         else:
             raise ValueError
 
@@ -131,6 +149,7 @@ class DatasetFactory:
         self,
         transformations: Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x,
         filters: Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x,
+        mode: Literal["user", "item"] = "user",
     ) -> Dataset:
         """
         Filters and transforms a copy of the underlying dataframe, and returns a Dataset object
@@ -141,7 +160,8 @@ class DatasetFactory:
             Transformations to be applied to the data, by default lambda*args:args
         filters : Callable, optional
             Filters to be applied after the transformations, by default lambda*args:args
-
+        mode: Literal["user", "item"], optional, by default 'user'
+            Determines whether data splitting will be done by user or by item
         Returns
         -------
         Dataset
@@ -152,5 +172,5 @@ class DatasetFactory:
         trainset = surprise.Dataset.load_from_df(
             df, surprise.Reader(line_format="user item rating")
         ).build_full_trainset()
-        dataset = Dataset(trainset)
+        dataset = Dataset(trainset, mode)
         return dataset

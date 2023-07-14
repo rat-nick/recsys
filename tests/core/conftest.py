@@ -1,13 +1,13 @@
 import pandas as pd
 import pytest
 
-from core.dataset import Dataset
+from core.dataset import DatasetFactory
 from utils.data import build_full_df, str_to_timestamp
 
 
 @pytest.fixture
-def full_dataset() -> Dataset:
-    ds = Dataset(
+def full_dataset() -> DatasetFactory:
+    ds = DatasetFactory(
         ratings_path="data/ml-100k/u.data",
         items_path="data/ml-100k/u.item",
         users_path="data/ml-100k/u.user",
