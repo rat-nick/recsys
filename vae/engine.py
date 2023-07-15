@@ -55,20 +55,18 @@ class Engine(coreEngine):
 
         return recommended
 
-    def prefs_to_model_input(self, preferences: List[int | str]):
-        """Method for converting user prefs to model input
+    def prefs_to_model_input(self, preferences: List[int | str]) -> torch.Tensor:
+        """Method for converting user preferences to model input
 
         Parameters
         ----------
-        preferences : _type_
-            _description_
-        raw2inner : _type_
-            _description_
+        preferences : List[int  |  str]
+            raw user preferences
 
         Returns
         -------
-        _type_
-            _description_
+        torch.Tensor
+            tensor representing VAE input
         """
         inner_ids = list(map(self.raw2inner, preferences))
         indices = torch.tensor(inner_ids).unsqueeze(0)
