@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def str_to_timestamp(df: pd.DataFrame) -> pd.DataFrame:
+def str_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
     for col in df.columns:
         name = col.lower()
         if name.endswith("date"):
