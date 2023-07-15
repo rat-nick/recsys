@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
+import torch
 
 from utils.data import str_to_datetime
-import torch
 
 
 @pytest.fixture

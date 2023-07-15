@@ -7,7 +7,7 @@ from pytorch_lightning.callbacks import EarlyStopping
 from torch.utils.data import DataLoader
 
 from utils.tensor import split
-from vae.dataset import Dataset
+from vae.data import Dataset
 
 DEFAULT_PATH = "vae/vae.pt"
 
