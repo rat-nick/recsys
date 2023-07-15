@@ -76,6 +76,6 @@ class Engine(coreEngine):
             indices=indices,
             values=torch.ones(len(indices), dtype=torch.float32),
             size=torch.Size([self.dataset.n_features]),
-        )
+        ).to_dense()
 
         return tensor
